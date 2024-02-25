@@ -1,5 +1,6 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CardSuit {
@@ -7,6 +8,25 @@ pub enum CardSuit {
     Diamond,
     Spade,
     Club,
+}
+
+impl fmt::Display for CardSuit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CardSuit::Heart => {
+                write!(f, "\u{2665}")
+            }
+            CardSuit::Diamond => {
+                write!(f, "\u{2666}")
+            }
+            CardSuit::Spade => {
+                write!(f, "\u{2660}")
+            }
+            CardSuit::Club => {
+                write!(f, "\u{2663}")
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -54,10 +74,62 @@ impl CardValue {
     }
 }
 
+impl fmt::Display for CardValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CardValue::Two => {
+                write!(f, "2")
+            }
+            CardValue::Three => {
+                write!(f, "3")
+            }
+            CardValue::Four => {
+                write!(f, "4")
+            }
+            CardValue::Five => {
+                write!(f, "5")
+            }
+            CardValue::Six => {
+                write!(f, "6")
+            }
+            CardValue::Seven => {
+                write!(f, "7")
+            }
+            CardValue::Eight => {
+                write!(f, "8")
+            }
+            CardValue::Nine => {
+                write!(f, "9")
+            }
+            CardValue::Ten => {
+                write!(f, "10")
+            }
+            CardValue::Jack => {
+                write!(f, "J")
+            }
+            CardValue::Queen => {
+                write!(f, "Q")
+            }
+            CardValue::King => {
+                write!(f, "K")
+            }
+            CardValue::Ace => {
+                write!(f, "A")
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Card {
     pub suit: CardSuit,
     pub value: CardValue,
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.value, self.suit)
+    }
 }
 
 pub struct Deck {
@@ -104,14 +176,6 @@ impl Deck {
         }
     }
 
-    /// Prints out all the cards in the deck in their current order.
-    pub fn show(&self) {
-        println!("{}", self.current_card);
-        for card in &self.cards {
-            println!("{:?}", card)
-        }
-    }
-
     /// Pops the first card off of the deck and returns it.
     pub fn pop_card(&mut self) -> Card {
         let cur = self.cards.get(self.current_card);
@@ -121,7 +185,7 @@ impl Deck {
                 *card
             }
             None => {
-                panic!("Tried to pop a card from the deck when no more exist")
+                panic!("tried to pop a card from the deck when no more exist")
             }
         }
     }
@@ -135,5 +199,47 @@ impl Deck {
     fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.cards.shuffle(&mut rng);
+    }
+}
+
+impl fmt::Display for Deck {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for card in &self.cards {
+            writeln!(f, "{}", card)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn increments_current_card() {
+        let mut deck = Deck::new();
+        assert_eq!(deck.current_card, 0);
+        deck.pop_card();
+        assert_eq!(deck.current_card, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "tried to pop a card from the deck when no more exist")]
+    fn panics_no_cards() {
+        let mut deck = Deck::new();
+        for _ in 0..52 {
+            deck.pop_card();
+        }
+        assert_eq!(deck.current_card, 52);
+        deck.pop_card();
+    }
+
+    #[test]
+    fn resets_current_card() {
+        let mut deck = Deck::new();
+        deck.pop_card();
+        assert_eq!(deck.current_card, 1);
+        deck.reset();
+        assert_eq!(deck.current_card, 0);
     }
 }
