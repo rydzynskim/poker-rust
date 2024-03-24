@@ -2,7 +2,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq)]
 pub enum CardSuit {
     Heart,
     Diamond,
@@ -29,7 +29,7 @@ impl fmt::Display for CardSuit {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub enum CardValue {
     Two = 2,
     Three = 3,
@@ -70,7 +70,7 @@ impl CardValue {
     }
 
     pub fn value(&self) -> u8 {
-        *self as u8
+        self.clone() as u8
     }
 }
 
@@ -120,7 +120,7 @@ impl fmt::Display for CardValue {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub struct Card {
     pub suit: CardSuit,
     pub value: CardValue,
@@ -128,7 +128,63 @@ pub struct Card {
 
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.value, self.suit)
+        if self.value.value() == 10 {
+            writeln!(f, " ----- ")?;
+            writeln!(f, "|     |")?;
+            writeln!(f, "| {}{} |", self.value, self.suit)?;
+            writeln!(f, "|     |")?;
+            writeln!(f, " ----- ")?;
+        } else {
+            writeln!(f, " ----- ")?;
+            writeln!(f, "|     |")?;
+            writeln!(f, "| {}{}  |", self.value, self.suit)?;
+            writeln!(f, "|     |")?;
+            writeln!(f, " ----- ")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct CardCollection(pub Vec<Card>);
+
+impl CardCollection {
+    pub fn concat(this: CardCollection, other: CardCollection) -> CardCollection {
+        CardCollection([this.0, other.0].concat())
+    }
+}
+
+impl fmt::Display for CardCollection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut top = String::new();
+        let mut second = String::new();
+        let mut third = String::new();
+        let mut fourth = String::new();
+        let mut bottom = String::new();
+
+        for card in &self.0 {
+            if card.value.value() == 10 {
+                top.push_str(" -----  ");
+                second.push_str("|     | ");
+                third.push_str(&format!("| {}{} | ", card.value, card.suit));
+                fourth.push_str("|     | ");
+                bottom.push_str(" -----  ");
+            } else {
+                top.push_str(" -----  ");
+                second.push_str("|     | ");
+                third.push_str(&format!("| {}{}  | ", card.value, card.suit));
+                fourth.push_str("|     | ");
+                bottom.push_str(" -----  ");
+            }
+        }
+
+        writeln!(f, "{}", top)?;
+        writeln!(f, "{}", second)?;
+        writeln!(f, "{}", third)?;
+        writeln!(f, "{}", fourth)?;
+        writeln!(f, "{}", bottom)?;
+
+        Ok(())
     }
 }
 
@@ -165,8 +221,8 @@ impl Deck {
         for suit in &suits {
             for value in &values {
                 cards.push(Card {
-                    suit: *suit,
-                    value: *value,
+                    suit: suit.clone(),
+                    value: value.clone(),
                 });
             }
         }
@@ -177,26 +233,20 @@ impl Deck {
     }
 
     /// Pops the first card off of the deck and returns it.
-    pub fn pop_card(&mut self) -> Card {
-        let cur = self.cards.get(self.current_card);
-        match cur {
-            Option::Some(card) => {
-                self.current_card += 1;
-                *card
-            }
-            None => {
-                panic!("tried to pop a card from the deck when no more exist")
-            }
+    pub fn pop_cards(&mut self, num: u8) -> Option<CardCollection> {
+        let mut cards: Vec<Card> = vec![];
+        for _ in 0..num {
+            let cur = self.cards.get(self.current_card)?;
+            cards.push(cur.clone());
+            self.current_card += 1;
         }
+
+        Some(CardCollection(cards))
     }
 
     /// Adds all cards back to the deck and shuffles them.
-    pub fn reset(&mut self) {
-        self.shuffle();
+    pub fn shuffle(&mut self) {
         self.current_card = 0;
-    }
-
-    fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.cards.shuffle(&mut rng);
     }
@@ -219,27 +269,27 @@ mod tests {
     fn increments_current_card() {
         let mut deck = Deck::new();
         assert_eq!(deck.current_card, 0);
-        deck.pop_card();
+        let one = deck.pop_cards(1);
         assert_eq!(deck.current_card, 1);
+        assert_eq!(one.unwrap().0.len(), 1);
+
+        let five = deck.pop_cards(5);
+        assert_eq!(deck.current_card, 5);
+        assert_eq!(five.unwrap().0.len(), 5);
     }
 
     #[test]
-    #[should_panic(expected = "tried to pop a card from the deck when no more exist")]
-    fn panics_no_cards() {
+    fn returns_no_cards() {
         let mut deck = Deck::new();
-        for _ in 0..52 {
-            deck.pop_card();
-        }
-        assert_eq!(deck.current_card, 52);
-        deck.pop_card();
+        assert!(deck.pop_cards(53).is_none());
     }
 
     #[test]
     fn resets_current_card() {
         let mut deck = Deck::new();
-        deck.pop_card();
-        assert_eq!(deck.current_card, 1);
-        deck.reset();
+        deck.pop_cards(20);
+        assert_eq!(deck.current_card, 20);
+        deck.shuffle();
         assert_eq!(deck.current_card, 0);
     }
 }
