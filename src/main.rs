@@ -1,36 +1,43 @@
-mod deck;
-mod hand;
+use clap::{Parser, Subcommand};
+use dotenv;
+
+#[derive(Subcommand)]
+enum Command {
+    /// Starts the server
+    Server {
+        /// Sets the port to bind to
+        #[clap(long, short = 'p')]
+        port: u32,
+    },
+    /// Starts the client
+    Client {
+        /// Sets the IP address to connect to
+        #[clap(long, short = 'i')]
+        ip_address: String,
+        /// Sets the port to connect to
+        #[clap(long, short = 'p')]
+        port: u32,
+    },
+}
+/// Texas Holdem' in the terminal
+#[derive(Parser)]
+struct Cli {
+    #[clap(subcommand)]
+    command: Command,
+}
 
 fn main() {
-    // initialize a new deck and shuffle it
-    let mut deck = deck::Deck::new();
-    deck.shuffle();
+    // initialize the logger
+    let _ = dotenv::dotenv();
+    env_logger::init();
 
-    // deal cards to 9 players
-    let common = deck.pop_cards(5).unwrap();
-    let mut players: Vec<deck::CardCollection> = vec![];
-    for _i in 0..9 {
-        players.push(deck::CardCollection::concat(
-            common.clone(),
-            deck.pop_cards(2).unwrap(),
-        ));
-    }
-
-    // get the best hand for every player
-    let mut best_hands = vec![];
-    for player in &players {
-        best_hands.push(hand::get_best_hand(player.clone()));
-    }
-
-    // rank the hands in relation to each other
-    let rankings = hand::assign_hand_rankings(players.clone());
-    let mut rankings_with_indices: Vec<_> = rankings.iter().enumerate().collect();
-    rankings_with_indices.sort_by(|a, b| a.1.cmp(&b.1));
-    for (index, rank) in rankings_with_indices {
-        println!("-----------------");
-        println!("{}", players[index]);
-        println!("{}", best_hands[index]);
-        println!("{}", rank);
-        println!("-----------------");
+    // start the application
+    match Cli::parse().command {
+        Command::Server { port } => {
+            println!("Binding the server to port {}", port);
+        }
+        Command::Client { ip_address, port } => {
+            println!("Connecting the client to {}:{}", ip_address, port);
+        }
     }
 }

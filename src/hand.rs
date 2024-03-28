@@ -1,5 +1,4 @@
-use crate::deck::CardCollection;
-use crate::deck::CardValue;
+use crate::deck::*;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -117,11 +116,11 @@ impl fmt::Display for Hand {
 // Also, might make more sense for these to exist as static methods on the Hand struct.
 // -----------------------
 
-/// Given a vector of vectors of cards (representing the hands of the players),
+/// Given a vector of card collections (representing the hands of the players),
 /// returns a vector of rankings. The ranking in a particluar index in the returned
-/// vector corresponds to the ranking of the hand at that index in the input. If two
+/// vector corresponds to the ranking of the card collectyion at that index in the input. If two
 /// hands have the same strength, they will have the same ranking in the returned vector.
-/// Each of the input vectors must be seven cards, representing the 5 community cards and
+/// Each of the input card collections must be seven cards, representing the 5 community cards and
 /// the 2 unique cards for that player.
 pub fn assign_hand_rankings(hands: Vec<CardCollection>) -> Vec<u8> {
     // get the best possible hand for each player

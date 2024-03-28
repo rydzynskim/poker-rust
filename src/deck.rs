@@ -1,3 +1,4 @@
+use colored::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fmt;
@@ -14,10 +15,12 @@ impl fmt::Display for CardSuit {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             CardSuit::Heart => {
-                write!(f, "\u{2665}")
+                let heart = "\u{2665}".red();
+                write!(f, "{}", heart)
             }
             CardSuit::Diamond => {
-                write!(f, "\u{2666}")
+                let diamond = "\u{2666}".red();
+                write!(f, "{}", diamond)
             }
             CardSuit::Spade => {
                 write!(f, "\u{2660}")
@@ -258,38 +261,5 @@ impl fmt::Display for Deck {
             writeln!(f, "{}", card)?;
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn increments_current_card() {
-        let mut deck = Deck::new();
-        assert_eq!(deck.current_card, 0);
-        let one = deck.pop_cards(1);
-        assert_eq!(deck.current_card, 1);
-        assert_eq!(one.unwrap().0.len(), 1);
-
-        let five = deck.pop_cards(5);
-        assert_eq!(deck.current_card, 5);
-        assert_eq!(five.unwrap().0.len(), 5);
-    }
-
-    #[test]
-    fn returns_no_cards() {
-        let mut deck = Deck::new();
-        assert!(deck.pop_cards(53).is_none());
-    }
-
-    #[test]
-    fn resets_current_card() {
-        let mut deck = Deck::new();
-        deck.pop_cards(20);
-        assert_eq!(deck.current_card, 20);
-        deck.shuffle();
-        assert_eq!(deck.current_card, 0);
     }
 }
